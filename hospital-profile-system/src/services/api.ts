@@ -10,6 +10,7 @@ import type {
 export const API_BASE_URL =
   import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 const DEFAULT_TIMEOUT_MS = 20000;
+const ANALYZE_TIMEOUT_MS = 120000;
 
 class ApiService {
   private baseUrl: string;
@@ -20,7 +21,8 @@ class ApiService {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    timeoutMs: number = DEFAULT_TIMEOUT_MS
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
@@ -31,7 +33,7 @@ class ApiService {
 
     const controller = options.signal ? undefined : new AbortController();
     const timeoutId = controller
-      ? setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS)
+      ? setTimeout(() => controller.abort(), timeoutMs)
       : undefined;
 
     try {
@@ -113,10 +115,14 @@ class ApiService {
         ? input.metadata
         : { ...(input.metadata || {}), llm_config: llmConfig };
 
-    return this.request<AnalysisResult>('/analyze', {
-      method: 'POST',
-      body: JSON.stringify({ ...input, metadata }),
-    });
+    return this.request<AnalysisResult>(
+      '/analyze',
+      {
+        method: 'POST',
+        body: JSON.stringify({ ...input, metadata }),
+      },
+      ANALYZE_TIMEOUT_MS
+    );
   }
 
   // 获取用户画像

@@ -141,6 +141,15 @@ const ConversationPage = () => {
     } catch (error) {
       if (error instanceof Error) {
         const msg = error.message || '分析失败';
+        const anyError = error as Error & { name?: string };
+        if (
+          anyError.name === 'AbortError' ||
+          msg.toLowerCase().includes('aborted') ||
+          msg.toLowerCase().includes('abort')
+        ) {
+          toast.error('分析超时，请稍后重试（模型响应较慢时可等待更久或换更快模型）');
+          return;
+        }
         if (msg === 'Failed to fetch' || msg.toLowerCase().includes('network')) {
           toast.error(
             '无法连接后端服务，请确认后端已启动且 VITE_API_URL 配置正确'

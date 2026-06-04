@@ -23,6 +23,14 @@ hospital-profile/
 - **多存储后端**：内置 JSON / SQLite / PostgreSQL 三种存储，`.env` 切换
 - **任意 OpenAI 兼容 LLM**：在前端 “LLM 配置” 填 `baseUrl / model / apiKey` 即可对接任何兼容服务
 
+## 截图
+
+![仪表盘](./image1.png)
+
+![对话分析](./image2.png)
+
+![标签分类体系](./image3.png)
+
 ## 技术栈
 
 | 端 | 技术 |
