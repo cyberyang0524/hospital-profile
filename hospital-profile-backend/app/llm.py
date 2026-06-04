@@ -15,38 +15,55 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from .schemas import LLMConfig, Message, TagInfo
+from . import store as store_module
+from .schemas_tag import TagCategoriesConfig, TagCategoryItem
 
 logger = logging.getLogger(__name__)
 
 
-SYSTEM_PROMPT_ZH = """你是一名医院客服对话分析师。请基于医患/客户对话内容，
+def _build_candidates_block(categories: Dict[str, TagCategoryItem]) -> str:
+    if not categories:
+        return ""
+    lines = []
+    for key, info in categories.items():
+        names = "、".join(info.tags) if info.tags else "（暂无候选）"
+        lines.append(f"- {key}（{info.name}）：{names}")
+    return "\n".join(lines)
+
+
+def _build_system_prompt(categories: Optional[Dict[str, TagCategoryItem]] = None) -> str:
+    candidates = _build_candidates_block(categories or {})
+    candidates_block = (
+        f"候选标签分类（key 必须从这些中选用；若用户改了候选标签，请以最新列表为准）：\n{candidates}"
+        if candidates
+        else "你可以自行扩展 tagCategory 和 tagName，但必须放在 personality/consumption/health/preference 这 4 个类别下。"
+    )
+    return f"""你是一名医院客服对话分析师。请基于医患/客户对话内容，
 输出严格符合以下 JSON 结构的标签提取结果（不要输出任何额外文字、Markdown 代码块或注释）：
 
-{
+{{
   "summary": "string – 一句话总结整段对话（不超过 80 字）",
   "keyInsights": ["string", "..."],
   "tags": [
-    {
+    {{
       "tagCategory": "personality" | "consumption" | "health" | "preference",
       "tagName": "string – 特征名（尽量与候选列表一致）",
       "tagValue": "string – 特征值（尽量与候选列表一致）",
       "confidence": 0.0,
       "evidence": "string – 引用对话原文（不超过 30 字）",
       "reasoning": "string – 简要分析（不超过 40 字）"
-    }
+    }}
   ]
-}
+}}
 
-候选标签（请优先从这些中选用，未出现的标签可自行扩展）：
-- personality (性格特征): 脾气大、脾气温和、容易急躁、有耐心、易怒、配合度高、不配合、挑剔、随和、固执、健谈、内向、表达清晰、表达含糊、积极、消极、焦虑、乐观
-- consumption (消费能力): 高消费、中消费、低消费、价格敏感、主动咨询高端服务、无所谓、自费、医保、商业保险、专家号需求、普通门诊
-- health (健康状况): 腿脚不便、轮椅需求、行动正常、行动受限、需要陪同、独自就诊、子女代为咨询、了解病情、不了解病情、常客、新患者
-- preference (服务偏好): VIP需求、需要特别关注、普通服务即可、快速响应、正常响应、不着急、高投诉风险、低投诉风险、高复诊意愿、低复诊意愿
+{candidates_block}
 
 要求：
-1. 只输出与对话内容真实相关的标签；不确定的标签不要输出。
-2. confidence 范围 0~1，证据越充分数值越高。
-3. keyInsights 至少给出 1 条、最多 3 条。
+1. tagCategory 必须是 "personality" / "consumption" / "health" / "preference" 之一（key 必须是英文小写）。
+2. tagName / tagValue 优先从上述候选标签中选用。
+3. 只输出与对话内容真实相关的标签；不确定的标签不要输出。
+4. confidence 范围 0~1，证据越充分数值越高。
+5. keyInsights 至少 1 条、最多 3 条。
 """
 
 
@@ -75,17 +92,53 @@ def _strip_code_fence(text: str) -> str:
     return text.strip()
 
 
+def _extract_first_json_object(text: str) -> Optional[str]:
+    """Locate the first balanced JSON object in a string."""
+    start = text.find("{")
+    if start == -1:
+        return None
+    depth = 0
+    in_str = False
+    escape = False
+    for i in range(start, len(text)):
+        c = text[i]
+        if in_str:
+            if escape:
+                escape = False
+            elif c == "\\":
+                escape = True
+            elif c == '"':
+                in_str = False
+            continue
+        if c == '"':
+            in_str = True
+        elif c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:i + 1]
+    return None
+
+
 def _safe_json_loads(text: str) -> Optional[Dict[str, Any]]:
+    if not text:
+        return None
+    # Strip reasoning / thinking blocks (DeepSeek, Qwen, etc.)
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    text = re.sub(r"<\|think\\|.*?\\|think\\|>", "", text, flags=re.DOTALL)
     text = _strip_code_fence(text)
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        if match:
-            try:
-                return json.loads(match.group(0))
-            except json.JSONDecodeError:
-                return None
+    if text.startswith("{") and text.endswith("}"):
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            pass
+    snippet = _extract_first_json_object(text)
+    if snippet:
+        try:
+            return json.loads(snippet)
+        except json.JSONDecodeError:
+            pass
     return None
 
 
@@ -100,13 +153,21 @@ async def chat_complete(
         logger.warning("LLM not configured (baseUrl/model missing).")
         return None
 
+    # Pull the latest user-defined tag categories so the prompt reflects them.
+    try:
+        cfg_doc = store_module.get_tag_config()
+        categories = cfg_doc.categories
+    except Exception:
+        categories = None
+    system_prompt = _build_system_prompt(categories)
+
     url = cfg.baseUrl.rstrip("/") + "/chat/completions"
     payload = {
         "model": cfg.model,
         "temperature": cfg.temperature,
         "max_tokens": cfg.maxTokens,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT_ZH},
+            {"role": "system", "content": system_prompt},
             *[{"role": m.role, "content": m.content} for m in messages],
         ],
     }
@@ -132,27 +193,64 @@ async def chat_complete(
     return _safe_json_loads(content)
 
 
+_CATEGORY_ALIASES = {
+    "personality": "personality",
+    "性格": "personality",
+    "性格特征": "personality",
+    "consumption": "consumption",
+    "消费": "consumption",
+    "消费能力": "consumption",
+    "health": "health",
+    "健康": "health",
+    "健康状况": "health",
+    "preference": "preference",
+    "偏好": "preference",
+    "服务偏好": "preference",
+}
+
+
+def _normalize_category(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    raw = str(value).strip().lower()
+    if not raw:
+        return None
+    return _CATEGORY_ALIASES.get(raw)
+
+
 def extract_tags(parsed: Optional[Dict[str, Any]]) -> List[TagInfo]:
     if not parsed or not isinstance(parsed, dict):
         return []
     out: List[TagInfo] = []
+    dropped = 0
     for t in parsed.get("tags", []) or []:
         if not isinstance(t, dict):
+            dropped += 1
+            continue
+        cat = _normalize_category(t.get("tagCategory"))
+        name = str(t.get("tagName", "")).strip()
+        if not cat or not name:
+            logger.warning("Drop tag without category/name: %s", t)
+            dropped += 1
             continue
         try:
+            value = str(t.get("tagValue", "")).strip() or name
+            conf = float(t.get("confidence", 0.0) or 0.0)
             out.append(
                 TagInfo(
-                    tagCategory=str(t.get("tagCategory", "")).strip() or "personality",
-                    tagName=str(t.get("tagName", "")).strip() or "未命名",
-                    tagValue=str(t.get("tagValue", "")).strip()
-                    or str(t.get("tagName", "")).strip(),
-                    confidence=float(t.get("confidence", 0.0) or 0.0),
+                    tagCategory=cat,
+                    tagName=name,
+                    tagValue=value,
+                    confidence=max(0.0, min(1.0, conf)),
                     evidence=str(t.get("evidence", "")).strip(),
                     reasoning=str(t.get("reasoning", "")).strip() or None,
                 )
             )
         except Exception as exc:
             logger.warning("Skip invalid tag: %s (%s)", t, exc)
+            dropped += 1
+    if dropped:
+        logger.info("extract_tags: kept %d, dropped %d", len(out), dropped)
     return out
 
 
