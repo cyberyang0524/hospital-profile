@@ -1,0 +1,2060 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>医院客户画像分析系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        .tag-badge { transition: all 0.2s; }
+        .tag-badge:hover { transform: scale(1.05); }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        textarea:focus, input:focus, select:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="app">
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">医院客户画像分析系统</h1>
+                            <p class="text-xs text-gray-500">基于 Mem0 智能记忆层设计</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div id="apiStatus" class="flex items-center gap-2 text-sm">
+                            <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                            <span class="text-gray-500">检查中...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Navigation -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <nav class="flex gap-1" id="navTabs">
+                    <button onclick="showPage('dashboard')" class="nav-tab active px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2" data-page="dashboard">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                        仪表盘
+                    </button>
+                    <button onclick="showPage('analyze')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2" data-page="analyze">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                        对话分析
+                    </button>
+                    <button onclick="showPage('profile')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2" data-page="profile">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        用户画像
+                    </button>
+                    <button onclick="showPage('settings')" class="nav-tab px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2" data-page="settings">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        LLM 配置
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Dashboard Page -->
+            <div id="page-dashboard" class="page">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">欢迎使用</h2>
+                    <p class="text-gray-600">基于 Mem0 智能记忆层设计，自动分析医患对话，构建精准用户画像</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover transition-all">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-3 rounded-lg bg-blue-100 text-blue-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            </div>
+                            <span class="text-sm text-green-600 font-medium">+12%</span>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-900 mb-1" id="statUsers">1,256</p>
+                        <p class="text-gray-500 text-sm">用户总数</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover transition-all">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-3 rounded-lg bg-green-100 text-green-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                            </div>
+                            <span class="text-sm text-green-600 font-medium">+5</span>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-900 mb-1" id="statToday">23</p>
+                        <p class="text-gray-500 text-sm">今日分析</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover transition-all">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-3 rounded-lg bg-purple-100 text-purple-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                            </div>
+                            <span class="text-sm text-green-600 font-medium">+28</span>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-900 mb-1" id="statTags">4,521</p>
+                        <p class="text-gray-500 text-sm">标签总数</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover transition-all">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="p-3 rounded-lg bg-orange-100 text-orange-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                            </div>
+                            <span class="text-sm text-green-600 font-medium">+2.3%</span>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-900 mb-1" id="statAccuracy">94.5%</p>
+                        <p class="text-gray-500 text-sm">分析准确率</p>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <button onclick="showPage('analyze')" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-left card-hover transition-all group">
+                        <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                            智能对话分析
+                            <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </h3>
+                        <p class="text-gray-600 text-sm">自动分析医患对话，提取患者特征标签</p>
+                    </button>
+                    <button onclick="showPage('profile')" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-left card-hover transition-all group">
+                        <div class="w-12 h-12 rounded-lg bg-purple-500 flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                            画像管理
+                            <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </h3>
+                        <p class="text-gray-600 text-sm">查看和管理用户画像，支持手动调整</p>
+                    </button>
+                    <button onclick="showPage('settings')" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-left card-hover transition-all group">
+                        <div class="w-12 h-12 rounded-lg bg-green-500 flex items-center justify-center mb-4">
+<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                            LLM 配置
+                            <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </h3>
+                        <p class="text-gray-600 text-sm">配置大语言模型，支持多种提供商</p>
+                    </button>
+                </div>
+
+                <!-- Tag Categories -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        标签分类体系
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="text-3xl">👤</span>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">性格特征</h4>
+                                    <p class="text-sm text-gray-500">18 个标签</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">脾气大</span>
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">配合度高</span>
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">健谈</span>
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">+15</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="text-3xl">💰</span>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">消费能力</h4>
+                                    <p class="text-sm text-gray-500">11 个标签</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">高消费</span>
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">价格敏感</span>
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">VIP需求</span>
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">+8</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="text-3xl">🏥</span>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">健康状况</h4>
+                                    <p class="text-sm text-gray-500">11 个标签</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">腿脚不便</span>
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">轮椅需求</span>
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">需要陪同</span>
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">+8</span>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="text-3xl">⭐</span>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">服务偏好</h4>
+                                    <p class="text-sm text-gray-500">10 个标签</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">VIP需求</span>
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">快速响应</span>
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">高复诊意愿</span>
+                                <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs">+7</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features -->
+                <div class="gradient-bg rounded-xl p-8 text-white">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div>
+                            <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mb-4">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                            </div>
+                            <h4 class="text-lg font-semibold mb-2">LLM 驱动</h4>
+                            <p class="text-white/80 text-sm">基于大语言模型自动分析和理解对话内容，提取精准的用户特征</p>
+                        </div>
+                        <div>
+                            <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mb-4">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                            </div>
+                            <h4 class="text-lg font-semibold mb-2">持续学习</h4>
+                            <p class="text-white/80 text-sm">支持画像的增量更新，随着对话积累不断优化用户特征标签</p>
+                        </div>
+                        <div>
+                            <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mb-4">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            </div>
+                            <h4 class="text-lg font-semibold mb-2">多层次存储</h4>
+                            <p class="text-white/80 text-sm">整合向量数据库、Redis缓存、PostgreSQL结构化存储</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analyze Page -->
+            <div id="page-analyze" class="page hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">对话分析</h2>
+                    <p class="text-gray-600">输入用户ID和对话内容，系统将自动分析并提取用户特征标签</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Input Panel -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">对话输入</h3>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">用户ID <span class="text-red-500">*</span></label>
+                                <input type="text" id="analyzeUserId" placeholder="如：patient_001" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">对话ID（可选）</label>
+                                <input type="text" id="analyzeConvId" placeholder="如：conv_12345" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors">
+                            </div>
+                        </div>
+
+                        <!-- 整段对话输入 -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">对话内容 <span class="text-red-500">*</span></label>
+                            <textarea
+                                id="conversationText"
+                                placeholder="请直接粘贴医患对话内容，系统将自动识别对话双方并分析患者特征..."
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors resize-none"
+                                rows="12"
+                            ></textarea>
+                            <p class="mt-2 text-xs text-gray-500">系统会自动识别对话格式，无需特殊标记</p>
+                        </div>
+
+                        <button onclick="analyzeConversation()" id="analyzeBtn" class="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                            开始分析
+                        </button>
+                    </div>
+
+                    <!-- Results Panel -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">分析结果</h3>
+                        
+                        <div id="resultsEmpty" class="flex flex-col items-center justify-center py-16 text-gray-400">
+                            <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                            <p>输入对话内容并点击分析按钮</p>
+                            <p class="text-sm">分析结果将显示在这里</p>
+                        </div>
+
+                        <div id="resultsContent" class="hidden space-y-6">
+                            <div id="summarySection" class="bg-blue-50 rounded-lg p-4 hidden">
+                                <h4 class="font-medium text-blue-900 mb-2">对话摘要</h4>
+                                <p id="summaryText" class="text-blue-800 text-sm"></p>
+                            </div>
+
+                            <div id="insightsSection" class="bg-purple-50 rounded-lg p-4 hidden">
+                                <h4 class="font-medium text-purple-900 mb-2">关键洞察</h4>
+                                <ul id="insightsList" class="space-y-1"></ul>
+                            </div>
+
+                            <div>
+                                <h4 class="font-medium text-gray-900 mb-3">提取的标签 (<span id="tagCount">0</span>)</h4>
+                                <div id="tagsContainer" class="space-y-4"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example -->
+                <div class="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6">
+                    <h4 class="font-medium text-gray-900 mb-3">💡 示例对话</h4>
+                    <p class="text-sm text-gray-600 mb-4">您可以直接粘贴以下对话内容进行分析：</p>
+                    <div class="bg-white rounded-lg p-4 text-sm space-y-1 font-mono">
+                        <p>用户：你好，我想问一下骨科门诊怎么预约？</p>
+                        <p>客服：您好！可以直接在手机上预约，也可以拨打我们的预约电话。</p>
+                        <p>用户：我腿脚不太好，上下楼很困难，能不能帮我安排一个方便一点的诊室？</p>
+                        <p>客服：好的王先生，我帮您安排一楼诊室，并且安排轮椅接送服务。</p>
+                        <p>用户：还有，我想问问那个VIP病房什么价格？我不差钱，只要服务好就行。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Page -->
+            <div id="page-profile" class="page hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">用户画像</h2>
+                    <p class="text-gray-600">查询和管理用户的画像标签信息</p>
+                </div>
+
+                <!-- Search -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                    <div class="flex gap-4">
+                        <div class="flex-1 relative">
+                            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            <input type="text" id="profileSearchId" onkeydown="if(event.key==='Enter')searchProfile()" placeholder="输入用户ID进行查询" class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <button onclick="searchProfile()" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            查询
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Profile Content -->
+                <div id="profileContent" class="hidden space-y-6">
+                    <!-- Basic Info -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-start justify-between mb-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                </div>
+                                <div>
+                                    <h3 id="profileName" class="text-xl font-bold text-gray-900"></h3>
+                                    <p id="profileUserId" class="text-gray-500"></p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4 text-sm text-gray-500">
+                                <div class="flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                                    <span>版本 <span id="profileVersion">1</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-500 mb-1">手机号码</p>
+                                <p id="profilePhone" class="font-medium text-gray-900">未设置</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-500 mb-1">更新时间</p>
+                                <p id="profileUpdated" class="font-medium text-gray-900">-</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-500 mb-1">标签总数</p>
+                                <p id="profileTagCount" class="font-medium text-gray-900">0</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-500 mb-1">最后交互</p>
+                                <p id="profileLastInteraction" class="font-medium text-gray-900">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-6">画像标签</h3>
+                        <div id="profileTagsContainer" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="profileEmpty" class="bg-white rounded-xl shadow-sm border border-gray-200 p-16">
+                    <div class="text-center">
+                        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        <p class="text-gray-500 text-lg">输入用户ID查询画像</p>
+                        <p class="text-gray-400 text-sm mt-2">支持用户ID或用户名查询</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="page-settings" class="page hidden">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">LLM 配置</h2>
+                    <p class="text-gray-600">配置大语言模型以驱动客户画像分析功能。支持 OpenAI、DeepSeek、本地模型等多种提供商。</p>
+                </div>
+
+                <!-- Provider Selection -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">选择提供商</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <button onclick="selectProvider('openai')" class="provider-btn selected p-4 rounded-lg border-2 transition-all" data-provider="openai">
+                            <div class="text-2xl mb-2">🤖</div>
+                            <div class="font-medium text-gray-900">OpenAI</div>
+                        </button>
+                        <button onclick="selectProvider('deepseek')" class="provider-btn p-4 rounded-lg border-2 transition-all" data-provider="deepseek">
+                            <div class="text-2xl mb-2">🔮</div>
+                            <div class="font-medium text-gray-900">DeepSeek</div>
+                        </button>
+                        <button onclick="selectProvider('local')" class="provider-btn p-4 rounded-lg border-2 transition-all" data-provider="local">
+                            <div class="text-2xl mb-2">💻</div>
+                            <div class="font-medium text-gray-900">本地模型</div>
+                        </button>
+                        <button onclick="selectProvider('azure')" class="provider-btn p-4 rounded-lg border-2 transition-all" data-provider="azure">
+                            <div class="text-2xl mb-2">☁️</div>
+                            <div class="font-medium text-gray-900">Azure</div>
+                        </button>
+                        <button onclick="selectProvider('custom')" class="provider-btn p-4 rounded-lg border-2 transition-all" data-provider="custom">
+                            <div class="text-2xl mb-2">⚙️</div>
+                            <div class="font-medium text-gray-900">自定义</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Config Form -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-6">配置参数</h3>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                                API Key
+                            </label>
+                            <input type="password" id="apiKey" placeholder="输入您的 API Key" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                            <p id="apiKeyHint" class="mt-1 text-xs text-gray-500">从 OpenAI 平台获取 API Key</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">API 地址 <span class="text-red-500">*</span></label>
+                            <input type="text" id="baseUrl" placeholder="https://api.openai.com/v1" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                            <p id="baseUrlHint" class="mt-1 text-xs text-gray-500">默认地址：https://api.openai.com/v1</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">模型 <span class="text-red-500">*</span></label>
+                            <div class="flex gap-2">
+                                <select id="modelSelect" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                                    <option value="gpt-4o">GPT-4o</option>
+                                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                </select>
+                                <input type="text" id="customModel" placeholder="或输入自定义模型名称" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">从下拉列表选择，或直接输入自定义模型名称（如：qwen-plus、claude-3-sonnet 等）</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Temperature（创造性）: <span id="tempValue">0.1</span></label>
+                            <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.1" oninput="document.getElementById('tempValue').textContent=this.value" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>精确（0）</span>
+                                <span>平衡（0.5）</span>
+                                <span>创造（1）</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">最大 Token 数</label>
+                            <input type="number" id="maxTokens" value="2000" min="100" max="100000" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                            <p class="mt-1 text-xs text-gray-500">控制单次响应的最大长度，建议 2000-4000</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test Result -->
+                <div id="testResult" class="hidden mt-6 p-4 rounded-lg border flex items-start gap-3"></div>
+
+                <!-- Actions -->
+                <div class="mt-6 flex gap-4">
+                    <button onclick="testConnection()" class="flex-1 py-3 px-6 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        测试连接
+                    </button>
+                    <button onclick="resetConfig()" class="py-3 px-6 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        重置
+                    </button>
+                    <button onclick="saveConfig()" class="flex-1 py-3 px-6 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                        保存配置
+                    </button>
+                </div>
+
+                <!-- Help -->
+                <div class="mt-8 bg-blue-50 rounded-lg p-6">
+                    <h4 class="font-medium text-gray-900 mb-3">配置帮助</h4>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li class="flex items-start gap-2"><span class="text-blue-600">•</span><span><strong>OpenAI</strong>：使用 GPT-4 系列模型，需要有效的 API Key</span></li>
+                        <li class="flex items-start gap-2"><span class="text-blue-600">•</span><span><strong>DeepSeek</strong>：国产大模型，性价比高，支持中文</span></li>
+                        <li class="flex items-start gap-2"><span class="text-blue-600">•</span><span><strong>本地模型</strong>：使用 Ollama 等本地部署的模型，地址填 http://localhost:11434</span></li>
+                        <li class="flex items-start gap-2"><span class="text-blue-600">•</span><span><strong>Azure OpenAI</strong>：企业用户使用微软 Azure 托管的 OpenAI</span></li>
+                        <li class="flex items-start gap-2"><span class="text-blue-600">•</span><span><strong>自定义</strong>：支持任何兼容 OpenAI API 格式的模型服务</span></li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // State
+        let currentProvider = 'openai';
+        let apiBaseUrl = 'http://localhost:8000/api/v1';
+
+        // Providers config
+        const providers = {
+            openai: { baseUrl: 'https://api.openai.com/v1', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'], hint: '从 OpenAI 平台获取 API Key' },
+            deepseek: { baseUrl: 'https://api.deepseek.com/v1', models: ['deepseek-chat', 'deepseek-reasoner'], hint: '从 DeepSeek 平台获取 API Key' },
+            local: { baseUrl: 'http://localhost:11434/v1', models: ['llama3', 'qwen2', 'mistral', 'phi3'], hint: '本地模型无需 API Key' },
+            azure: { baseUrl: '', models: ['gpt-4o', 'gpt-4', 'gpt-35-turbo'], hint: '从 Azure 门户获取 API Key' },
+            custom: { baseUrl: '', models: [], hint: '输入您自己的 API 地址和模型名称' }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkApiStatus();
+            loadConfig();
+            updateNavTabs();
+        });
+
+        // API Status
+        async function checkApiStatus() {
+            const statusEl = document.getElementById('apiStatus');
+            try {
+                const response = await fetch(apiBaseUrl + '/health');
+                if (response.ok) {
+                    statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500 pulse"></span><span class="text-gray-600">后端服务正常</span>';
+                } else {
+                    statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-yellow-500"></span><span class="text-gray-600">后端服务响应异常</span>';
+                }
+            } catch {
+                statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500"></span><span class="text-gray-600">后端服务未连接（演示模式）</span>';
+            }
+        }
+
+        // Navigation
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById('page-' + page).classList.remove('hidden');
+            updateNavTabs(page);
+        }
+
+        function updateNavTabs(activePage = 'dashboard') {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                const isActive = tab.dataset.page === activePage;
+                tab.classList.toggle('border-blue-600', isActive);
+                tab.classList.toggle('text-blue-600', isActive);
+                tab.classList.toggle('text-gray-600', !isActive);
+                tab.classList.toggle('border-transparent', !isActive);
+            });
+        }
+
+        // Analyze
+        function analyzeConversation() {
+            const userId = document.getElementById('analyzeUserId').value.trim();
+            const convText = document.getElementById('conversationText').value.trim();
+            
+            if (!userId) {
+                alert('请输入用户ID');
+                return;
+            }
+
+            if (!convText) {
+                alert('请输入对话内容');
+                return;
+            }
+
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 分析中...';
+
+            // Simulate analysis
+            setTimeout(() => {
+                const result = simulateAnalysis(convText);
+                displayResults(result);
+                btn.disabled = false;
+                btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg> 开始分析';
+            }, 2000);
+        }
+
+        function simulateAnalysis(text) {
+            // 分析关键词提取标签
+            const tags = [];
+            const lowerText = text.toLowerCase();
+            
+            // 健康状况关键词
+            if (/腿|脚|不便|轮椅|走路|行走|不方便/.test(text)) {
+                if (/轮椅/.test(text)) {
+                    tags.push({category: 'health', name: '行动能力', value: '轮椅需求', confidence: 0.92, evidence: '对话中提到需要轮椅'});
+                } else {
+                    tags.push({category: 'health', name: '行动能力', value: '腿脚不便', confidence: 0.90, evidence: '对话中多次提到腿脚不便'});
+                }
+            }
+            
+            if (/陪同|家人|子女|老伴|搀扶/.test(text)) {
+                tags.push({category: 'health', name: '行动能力', value: '需要陪同', confidence: 0.85, evidence: '对话中提到需要他人陪同'});
+            }
+            
+            if (/第一次|首次|新患者|没来过/.test(text)) {
+                tags.push({category: 'health', name: '就医频率', value: '新患者', confidence: 0.88, evidence: '对话中表明是新患者'});
+            }
+            
+            if (/常来|老患者|一直|经常/.test(text)) {
+                tags.push({category: 'health', name: '就医频率', value: '常客', confidence: 0.85, evidence: '对话中表明是老患者'});
+            }
+            
+            // 消费能力关键词
+            if (/不差钱|vip|高端|贵宾|有钱|无所谓|好就行/.test(text)) {
+                tags.push({category: 'consumption', name: '消费能力', value: '高消费', confidence: 0.88, evidence: '对话中表现出高消费意愿'});
+            }
+            
+            if (/价格|便宜|多少钱|划算|优惠|打折/.test(text) && !/无所谓/.test(text)) {
+                tags.push({category: 'consumption', name: '消费意愿', value: '价格敏感', confidence: 0.75, evidence: '对话中关注价格因素'});
+            }
+            
+            if (/医保|保险|报销/.test(text)) {
+                tags.push({category: 'consumption', name: '支付方式', value: '医保/保险', confidence: 0.82, evidence: '对话中提到使用医保'});
+            }
+            
+            if (/专家|主任|教授/.test(text)) {
+                tags.push({category: 'consumption', name: '就诊偏好', value: '专家号需求', confidence: 0.78, evidence: '对话中咨询专家号'});
+            }
+            
+            // 性格特征关键词
+            if (/谢谢|感谢|好的|行|可以|没问题/.test(text)) {
+                tags.push({category: 'personality', name: '态度', value: '配合度高', confidence: 0.82, evidence: '对话中态度积极'});
+            }
+            
+            if (/投诉|不满|生气|态度差|太差/.test(text)) {
+                tags.push({category: 'personality', name: '脾气', value: '脾气大', confidence: 0.80, evidence: '对话中表现出不满'});
+            }
+            
+            if (/不知道|不懂|不清楚|不明白/.test(text)) {
+                tags.push({category: 'personality', name: '沟通', value: '表达含糊', confidence: 0.70, evidence: '对话中表现出对病情不了解'});
+            }
+            
+            // 服务偏好关键词
+            if (/快点|赶紧|着急|紧急|马上/.test(text)) {
+                tags.push({category: 'preference', name: '响应要求', value: '快速响应', confidence: 0.85, evidence: '对话中表现出急迫感'});
+            }
+            
+            if (/继续|复诊|再来|回访/.test(text)) {
+                tags.push({category: 'preference', name: '复诊意愿', value: '高复诊意愿', confidence: 0.80, evidence: '对话中表明会继续就诊'});
+            }
+            
+            // 生成摘要
+            let summary = '患者';
+            if (tags.some(t => t.value === '腿脚不便' || t.value === '轮椅需求')) {
+                summary += '存在行动不便的情况，';
+            }
+            if (tags.some(t => t.value === '高消费')) {
+                summary += '消费能力较强，';
+            }
+            if (tags.some(t => t.value === '配合度高')) {
+                summary += '就医态度积极，';
+            }
+            if (tags.some(t => t.value === '脾气大')) {
+                summary += '需要关注服务态度，';
+            }
+            if (tags.some(t => t.value === '快速响应')) {
+                summary += '对响应速度有较高要求，';
+            }
+            summary = summary.replace(/，$/, '。');
+            if (summary === '患者。') {
+                summary = '患者在对话中表达了基本的就医需求。';
+            }
+
+            return {
+                summary,
+                insights: tags.slice(0, 3).map(t => `重点关注：${t.name} - ${t.value}`),
+                tags
+            };
+        }
+
+        function displayResults(result) {
+            document.getElementById('resultsEmpty').classList.add('hidden');
+            document.getElementById('resultsContent').classList.remove('hidden');
+            document.getElementById('resultsContent').classList.add('fade-in');
+
+            // Summary
+            const summarySection = document.getElementById('summarySection');
+            document.getElementById('summaryText').textContent = result.summary;
+            summarySection.classList.remove('hidden');
+
+            // Insights
+            const insightsSection = document.getElementById('insightsSection');
+            document.getElementById('insightsList').innerHTML = result.insights.map(i => 
+                `<li class="text-purple-800 text-sm flex items-start gap-2"><span class="text-purple-500">•</span>${i}</li>`
+            ).join('');
+            if (result.insights.length > 0) insightsSection.classList.remove('hidden');
+
+            // Tags
+            document.getElementById('tagCount').textContent = result.tags.length;
+            const categoryIcons = { personality: '👤', consumption: '💰', health: '🏥', preference: '⭐' };
+            const categoryNames = { personality: '性格特征', consumption: '消费能力', health: '健康状况', preference: '服务偏好' };
+
+            const tagsByCategory = {};
+            result.tags.forEach(tag => {
+                if (!tagsByCategory[tag.category]) tagsByCategory[tag.category] = [];
+                tagsByCategory[tag.category].push(tag);
+            });
+
+            document.getElementById('tagsContainer').innerHTML = Object.entries(tagsByCategory).map(([cat, tags]) => `
+                <div class="mb-4">
+                    <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg mb-2">
+                        <span class="text-2xl">${categoryIcons[cat] || '🏷️'}</span>
+                        <span class="font-medium text-gray-900">${categoryNames[cat] || cat}</span>
+                        <span class="text-sm text-gray-500">(${tags.length})</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 pl-2">
+                        ${tags.map(t => `
+                            <div class="p-3 bg-white border border-gray-200 rounded-lg">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-medium text-gray-900">${t.value}</span>
+                                    <span class="px-2 py-0.5 rounded text-xs font-medium ${t.confidence >= 0.8 ? 'text-green-600 bg-green-100' : t.confidence >= 0.6 ? 'text-yellow-600 bg-yellow-100' : 'text-red-600 bg-red-100'}">${Math.round(t.confidence * 100)}%</span>
+                                </div>
+                                <p class="text-xs text-gray-500">${t.evidence}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Profile Search
+        async function searchProfile() {
+            const userId = document.getElementById('profileSearchId').value.trim();
+            if (!userId) {
+                alert('请输入用户ID');
+                return;
+            }
+
+            // Simulate profile data
+            document.getElementById('profileEmpty').classList.add('hidden');
+            document.getElementById('profileContent').classList.remove('hidden');
+
+            document.getElementById('profileName').textContent = userId;
+            document.getElementById('profileUserId').textContent = userId;
+            document.getElementById('profileVersion').textContent = Math.floor(Math.random() * 10) + 1;
+            document.getElementById('profilePhone').textContent = '138****8888';
+            document.getElementById('profileUpdated').textContent = new Date().toLocaleDateString('zh-CN');
+            document.getElementById('profileLastInteraction').textContent = new Date().toLocaleDateString('zh-CN');
+
+            const tagCount = Math.floor(Math.random() * 10) + 5;
+            document.getElementById('profileTagCount').textContent = tagCount;
+
+            // Render tags
+            const sampleTags = [
+                {category: 'health', value: '腿脚不便', confidence: 0.92, evidence: '对话中多次提到行动不便'},
+                {category: 'consumption', value: '高消费', confidence: 0.88, evidence: '询问VIP服务'},
+                {category: 'personality', value: '配合度高', confidence: 0.75, evidence: '积极响应建议'},
+                {category: 'preference', value: '快速响应', confidence: 0.82, evidence: '多次催促'},
+                {category: 'health', value: '需要陪同', confidence: 0.70, evidence: '家人陪同就诊'},
+            ];
+
+            const categoryIcons = { personality: '👤', consumption: '💰', health: '🏥', preference: '⭐' };
+            const categoryNames = { personality: '性格特征', consumption: '消费能力', health: '健康状况', preference: '服务偏好' };
+
+            const tagsByCategory = {};
+            sampleTags.forEach(tag => {
+                if (!tagsByCategory[tag.category]) tagsByCategory[tag.category] = [];
+                tagsByCategory[tag.category].push(tag);
+            });
+
+            document.getElementById('profileTagsContainer').innerHTML = Object.entries(tagsByCategory).map(([cat, tags]) => `
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="flex items-center justify-between p-4 bg-gray-50">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">${categoryIcons[cat]}</span>
+                            <div>
+                                <p class="font-medium text-gray-900">${categoryNames[cat]}</p>
+                                <p class="text-sm text-gray-500">${tags.length} 个标签</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            ${tags.map(t => `
+                                <div class="p-4 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <span class="font-medium text-gray-900">${t.value}</span>
+                                        <span class="px-2 py-0.5 rounded text-xs font-medium ${t.confidence >= 0.8 ? 'text-green-600 bg-green-100' : 'text-yellow-600 bg-yellow-100'}">${Math.round(t.confidence * 100)}%</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 line-clamp-2">${t.evidence}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // LLM Config
+        function selectProvider(provider) {
+            currentProvider = provider;
+            document.querySelectorAll('.provider-btn').forEach(btn => {
+                btn.classList.toggle('border-blue-600', btn.dataset.provider === provider);
+                btn.classList.toggle('bg-blue-50', btn.dataset.provider === provider);
+                btn.classList.toggle('border-gray-200', btn.dataset.provider !== provider);
+            });
+
+            const config = providers[provider];
+            document.getElementById('baseUrl').placeholder = config.baseUrl || 'https://api.example.com/v1';
+            document.getElementById('baseUrlHint').textContent = '默认地址：' + (config.baseUrl || '请输入自定义 API 地址');
+            document.getElementById('apiKeyHint').textContent = config.hint;
+
+            const modelSelect = document.getElementById('modelSelect');
+            if (config.models.length > 0) {
+                modelSelect.innerHTML = config.models.map(m => `<option value="${m}">${m}</option>`).join('');
+                modelSelect.disabled = false;
+            } else {
+                modelSelect.innerHTML = '<option value="">请输入自定义模型</option>';
+                modelSelect.disabled = true;
+            }
+        }
+
+        function loadConfig() {
+            const saved = localStorage.getItem('llm_config');
+            if (saved) {
+                const config = JSON.parse(saved);
+                document.getElementById('apiKey').value = config.apiKey || '';
+                document.getElementById('baseUrl').value = config.baseUrl || '';
+                document.getElementById('temperature').value = config.temperature || 0.1;
+                document.getElementById('tempValue').textContent = config.temperature || 0.1;
+                document.getElementById('maxTokens').value = config.maxTokens || 2000;
+                
+                // 如果有保存的自定义模型
+                if (config.customModel) {
+                    document.getElementById('customModel').value = config.customModel;
+                }
+                
+                selectProvider(config.provider || 'openai');
+                if (config.model) {
+                    document.getElementById('modelSelect').value = config.model;
+                }
+            }
+        }
+
+        function saveConfig() {
+            const customModel = document.getElementById('customModel').value.trim();
+            const selectedModel = document.getElementById('modelSelect').value;
+            
+            const config = {
+                provider: currentProvider,
+                apiKey: document.getElementById('apiKey').value,
+                baseUrl: document.getElementById('baseUrl').value,
+                model: customModel || selectedModel,
+                customModel: customModel,
+                temperature: parseFloat(document.getElementById('temperature').value),
+                maxTokens: parseInt(document.getElementById('maxTokens').value)
+            };
+            localStorage.setItem('llm_config', JSON.stringify(config));
+            alert('配置保存成功！\n\n当前使用模型：' + config.model);
+        }
+
+        function resetConfig() {
+            document.getElementById('apiKey').value = '';
+            document.getElementById('baseUrl').value = '';
+            document.getElementById('temperature').value = 0.1;
+            document.getElementById('tempValue').textContent = '0.1';
+            document.getElementById('maxTokens').value = 2000;
+            document.getElementById('customModel').value = '';
+            selectProvider('openai');
+        }
+
+        function testConnection() {
+            const apiKey = document.getElementById('apiKey').value;
+            const resultEl = document.getElementById('testResult');
+            resultEl.classList.remove('hidden');
+            
+            if (!apiKey && currentProvider !== 'local') {
+                resultEl.className = 'mt-6 p-4 rounded-lg border bg-red-50 border-red-200 flex items-start gap-3';
+                resultEl.innerHTML = '<svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><div><p class="font-medium text-red-800">测试失败</p><p class="text-sm text-red-700">请输入 API Key</p></div>';
+                return;
+            }
+
+            resultEl.className = 'mt-6 p-4 rounded-lg border bg-green-50 border-green-200 flex items-start gap-3';
+            resultEl.innerHTML = '<svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><div><p class="font-medium text-green-800">配置验证成功</p><p class="text-sm text-green-700">API 配置可以正常使用。当前使用模型：' + (document.getElementById('customModel').value || document.getElementById('modelSelect').value) + '</p></div>';
+        }
+    </script>
+
+<style>
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.inland-security-footer {
+  position: fixed;
+  z-index: 10;
+  bottom: 0;
+  right: 0;
+  width: fit-content;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.tooltip-container {
+  position: relative;
+}
+
+.trigger-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background-color: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.minimax-link {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 300;
+  color: #adadad;
+  text-decoration: none;
+}
+
+.minimax-link:visited {
+  color: #adadad;
+}
+
+.minimax-link:hover {
+  color: #666666;
+}
+
+.tooltip-content {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  padding-bottom: 16px; /* 8px 内容间距 + 8px 用于鼠标移动的透明区域 */
+  font-size: 12px;
+  line-height: 17px;
+  background-color: #fafafa;
+  border-radius: 12px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  color: #171717;
+}
+
+/* 创建透明的连接区域，让鼠标可以平滑移动到 tooltip */
+.tooltip-content::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 16px;
+}
+
+.tooltip-container:hover .tooltip-content {
+  display: flex;
+}
+
+.info-section {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.beian-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #171717;
+}
+
+.beian-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 2px;
+}
+
+.underline-text {
+  color: #171717;
+  text-decoration: underline;
+}
+
+.underline-text:hover {
+  color: #000000;
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .trigger-content {
+    background-color: transparent;
+  }
+
+  .minimax-link,
+  .minimax-link:visited {
+    color: #666666;
+  }
+
+  .minimax-link:hover {
+    color: #adadad;
+  }
+
+  .tooltip-content {
+    background-color: #262626;
+    color: #ededed;
+  }
+
+  .beian-link,
+  .underline-text {
+    color: #ededed;
+  }
+
+  .underline-text:hover {
+    color: #ffffff;
+  }
+}
+
+</style>
+<div class="inland-security-footer">
+  <div class="tooltip-container">
+    <div class="trigger-content">
+      <a href="https://www.minimaxi.com/" target="_blank" rel="noreferrer" class="minimax-link">
+        <span>© 2026 MiniMax</span>
+      </a>
+    </div>
+    <div class="tooltip-content">
+      <section class="info-section">
+        <span>上海稀宇科技有限公司</span>
+      </section>
+
+      <section class="info-section">
+        <a class="beian-link" href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=31010402010179" target="_blank" rel="noreferrer">
+          <img alt="hailuo-beian-icon" src="https://cdn.hailuoai.com/hailuo-video-web/public_assets/223037d3-79fd-4db0-a456-749f38a6a14b.png" class="beian-icon">
+          <span class="underline-text">沪公网安备31010402010179号</span>
+        </a>
+        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer" class="underline-text">
+          沪ICP备2023003282号-38
+        </a>
+      </section>
+
+      <section class="info-section">
+        <span>模型名称：MiniMax</span>
+        <span>备案号：Shanghai-MiniMax-202505230046</span>
+      </section>
+
+      <section class="info-section">
+        <a href="https://agent.minimaxi.com/doc/zh/terms-of-service.html" target="_blank" rel="noreferrer" class="underline-text">
+          用户协议
+        </a>
+        <a href="https://agent.minimaxi.com/doc/zh/privacy-policy.html" target="_blank" rel="noreferrer" class="underline-text">
+          隐私政策
+        </a>
+      </section>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/**
+ * Iframe 元素高亮注入脚本
+ * 需要在目标网站中引入此脚本来支持跨域 iframe 高亮功能
+ *
+ * 使用方法：
+ * 1. 将此脚本添加到目标网站的 HTML 中
+ * 2. 或通过浏览器扩展、用户脚本等方式注入
+ */
+
+(function () {
+  "use strict";
+
+  // 检查是否在 iframe 中
+  if (window.self === window.top) {
+    return; // 不在 iframe 中，不执行
+  }
+
+  // 检查是否已经初始化过
+  if (window.__iframeHighlightInitialized) {
+    return;
+  }
+  window.__iframeHighlightInitialized = true;
+  console.log("Iframe 高亮脚本已加载");
+
+  // 创建高亮覆盖层
+  var overlay = document.createElement("div");
+  overlay.id = "iframe-highlight-overlay";
+  overlay.style.cssText = "\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100vw;\n    height: 100vh;\n    pointer-events: none;\n    z-index: 999999;\n    overflow: hidden;\n  ";
+
+  // 创建悬停高亮框（虚线边框）
+  var highlightBox = document.createElement("div");
+  highlightBox.id = "iframe-highlight-box";
+  highlightBox.style.cssText = "\n    position: absolute;\n    border: 2px dashed #007AFF;\n    background: rgba(0, 122, 255, 0.08);\n    pointer-events: none;\n    display: none;\n    transition: all 0.1s ease;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8);\n    border-radius: 2px;\n  ";
+
+  // 创建选中节点的常驻高亮框（实线边框）
+  var selectedBox = document.createElement("div");
+  selectedBox.id = "iframe-selected-box";
+  selectedBox.style.cssText = "\n    position: absolute;\n    border: 2px solid #007AFF;\n    pointer-events: none;\n    display: none;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 8px rgba(255, 107, 53, 0.4);\n    border-radius: 2px;\n    z-index: 1000000;\n  ";
+
+  // 创建悬停标签显示
+  var tagLabel = document.createElement("div");
+  tagLabel.id = "iframe-tag-label";
+  tagLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 2px 6px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 2px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000001;\n    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);\n    font-weight: 500;\n  ";
+
+  // 创建选中节点标签
+  var selectedLabel = document.createElement("div");
+  selectedLabel.id = "iframe-selected-label";
+  selectedLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 3px 8px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 3px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000002;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);\n    font-weight: 600;\n  ";
+  overlay.appendChild(highlightBox);
+  overlay.appendChild(selectedBox);
+  overlay.appendChild(tagLabel);
+  overlay.appendChild(selectedLabel);
+  document.body.appendChild(overlay);
+
+  // 存储当前选中的元素
+  var selectedElement = null;
+  var highlightEnabled = false;
+
+  // 更新选中元素的高亮显示
+  function updateSelectedHighlight(element) {
+    console.log("updateSelectedHighlight called with:", element);
+    if (!element) {
+      selectedBox.style.display = "none";
+      selectedLabel.style.display = "none";
+      selectedElement = null;
+      console.log("Cleared selected highlight");
+      return;
+    }
+    selectedElement = element;
+    var rect = element.getBoundingClientRect();
+    console.log("Selected element rect:", rect);
+
+    // 更新选中高亮框位置
+    selectedBox.style.display = "block";
+    selectedBox.style.left = "".concat(rect.left - 2, "px");
+    selectedBox.style.top = "".concat(rect.top - 2, "px");
+    selectedBox.style.width = "".concat(rect.width + 4, "px");
+    selectedBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新选中标签位置和内容
+    selectedLabel.style.display = "block";
+    selectedLabel.textContent = "\u2713 <".concat(element.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 28;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 5) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    var labelWidth = selectedLabel.offsetWidth || 100; // 预估宽度
+    if (labelLeft + labelWidth > window.innerWidth - 10) {
+      labelLeft = window.innerWidth - labelWidth - 10;
+    }
+    selectedLabel.style.left = "".concat(Math.max(5, labelLeft), "px");
+    selectedLabel.style.top = "".concat(labelTop, "px");
+    console.log("Selected highlight positioned at:", {
+      left: selectedBox.style.left,
+      top: selectedBox.style.top,
+      width: selectedBox.style.width,
+      height: selectedBox.style.height
+    });
+  }
+  function getElementSelector(element) {
+    if (!(element instanceof Element)) throw new Error('Argument must be a DOM element');
+    var segments = [];
+    var current = element;
+    while (current !== document.documentElement) {
+      var selector = '';
+      // 优先检查唯一ID
+      if (current.id && document.querySelectorAll("#".concat(current.id)).length === 1) {
+        segments.unshift("#".concat(current.id));
+        break; // ID唯一，无需继续向上
+      }
+
+      // 生成类名选择器（取第一个有效类名）
+      var classes = Array.from(current.classList).filter(function (c) {
+        return !c.startsWith('js-');
+      });
+      var className = classes.length > 0 ? ".".concat(classes[0]) : '';
+
+      // 生成位置索引（nth-child）
+      var tag = current.tagName.toLowerCase();
+      if (!className) {
+        var siblings = Array.from(current.parentNode.children);
+        var index = siblings.findIndex(function (el) {
+          return el === current;
+        }) + 1;
+        selector = "".concat(tag, ":nth-child(").concat(index, ")");
+      } else {
+        selector = className;
+      }
+      segments.unshift(selector);
+      current = current.parentElement;
+    }
+
+    // 处理根元素
+    if (current === document.documentElement) {
+      segments.unshift('html');
+    }
+    return segments.join(' > ');
+  }
+
+  // 获取元素文本内容
+  function getElementText(element) {
+    var _element$textContent;
+    if (element.tagName === "INPUT") {
+      return element.value || element.placeholder || "";
+    }
+    if (element.tagName === "TEXTAREA") {
+      return element.value || element.placeholder || "";
+    }
+    var text = ((_element$textContent = element.textContent) === null || _element$textContent === void 0 ? void 0 : _element$textContent.trim()) || "";
+    return text.length > 50 ? text.substring(0, 50) + "..." : text;
+  }
+
+  // 获取元素属性信息
+  function getElementAttributes(element) {
+    var attrs = {};
+    for (var i = 0; i < element.attributes.length; i++) {
+      var attr = element.attributes[i];
+      attrs[attr.name] = attr.value;
+    }
+    return attrs;
+  }
+
+  // 鼠标悬停事件处理
+  function handleMouseOver(e) {
+    if (!highlightEnabled) return;
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免高亮 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 如果是已选中的元素，不显示悬停高亮
+    if (target === selectedElement) {
+      highlightBox.style.display = "none";
+      tagLabel.style.display = "none";
+      return;
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+
+    // 更新悬停高亮框位置
+    highlightBox.style.display = "block";
+    highlightBox.style.left = "".concat(rect.left - 2, "px");
+    highlightBox.style.top = "".concat(rect.top - 2, "px");
+    highlightBox.style.width = "".concat(rect.width + 4, "px");
+    highlightBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新标签位置和内容
+    tagLabel.style.display = "block";
+    tagLabel.textContent = "<".concat(target.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 22;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 0) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    if (labelLeft + tagLabel.offsetWidth > window.innerWidth) {
+      labelLeft = window.innerWidth - tagLabel.offsetWidth - 5;
+    }
+    tagLabel.style.left = "".concat(Math.max(0, labelLeft), "px");
+    tagLabel.style.top = "".concat(labelTop, "px");
+
+    // 发送消息到父窗口
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 鼠标离开事件处理
+  function handleMouseOut(e) {
+    if (!highlightEnabled) return;
+    var relatedTarget = e.relatedTarget;
+
+    // 如果鼠标移动到高亮相关元素上，不隐藏高亮
+    if (relatedTarget && (relatedTarget === highlightBox || relatedTarget === tagLabel || relatedTarget === overlay || relatedTarget === selectedBox || relatedTarget === selectedLabel)) {
+      return;
+    }
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: null,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 点击事件处理
+  function handleClick(e) {
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免处理 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 检查是否是交互元素，这些元素需要保留默认行为
+    var isInteractiveElement = ['input', 'textarea', 'select', 'button', 'a'].includes(target.tagName.toLowerCase());
+
+    // 如果高亮功能启用，对于非交互元素阻止默认行为和事件传播
+    if (highlightEnabled) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+    console.log("Element clicked:", {
+      tagName: target.tagName,
+      selector: selector,
+      rect: rect
+    });
+
+    // 立即更新选中高亮
+    updateSelectedHighlight(target);
+
+    // 隐藏悬停高亮，因为现在是选中状态
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-click",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 监听来自父窗口的消息
+  function handleParentMessage(event) {
+    console.log("Received message from parent:", event.data);
+    if (event.data.type === "iframe-highlight-toggle") {
+      var enabled = event.data.enabled;
+      console.log("Highlight toggle:", enabled);
+      if (enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "enable-iframe-highlight") {
+      console.log("Enable iframe highlight");
+      enableHighlight();
+    } else if (event.data.type === "disable-iframe-highlight") {
+      console.log("Disable iframe highlight");
+      disableHighlight();
+    } else if (event.data.type === "toggle-iframe-highlight") {
+      var _enabled = event.data.enabled !== undefined ? event.data.enabled : !highlightEnabled;
+      console.log("Toggle iframe highlight to:", _enabled);
+      if (_enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "update-selected-element") {
+      var selector = event.data.selector;
+      console.log("Update selected element with selector:", selector);
+      if (selector) {
+        try {
+          var element = document.querySelector(selector);
+          console.log("Found element by selector:", element);
+          updateSelectedHighlight(element);
+        } catch (error) {
+          console.warn("Failed to select element:", error);
+          updateSelectedHighlight(null);
+        }
+      } else {
+        updateSelectedHighlight(null);
+      }
+    } else if (event.data.type === "clear-selected-element") {
+      console.log("Clear selected element");
+      updateSelectedHighlight(null);
+    }
+  }
+
+  // 启用高亮功能
+  function enableHighlight() {
+    console.log("Enabling highlight");
+    document.addEventListener("mouseover", handleMouseOver, true);
+    document.addEventListener("mouseout", handleMouseOut, true);
+    document.addEventListener("click", handleClick, true);
+    highlightEnabled = true;
+    overlay.style.display = "block";
+  }
+
+  // 禁用高亮功能
+  function disableHighlight() {
+    console.log("Disabling highlight");
+    highlightEnabled = false;
+    // 保持事件监听器，但通过 highlightEnabled 变量控制行为
+    // 这样可以保留选中状态的显示
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    // 不隐藏 selectedBox 和 selectedLabel，保留选中状态
+  }
+
+  // 完全禁用高亮功能（移除所有监听器）
+  function fullyDisableHighlight() {
+    console.log("Fully disabling highlight");
+    highlightEnabled = false;
+    document.removeEventListener("mouseover", handleMouseOver, true);
+    document.removeEventListener("mouseout", handleMouseOut, true);
+    document.removeEventListener("click", handleClick, true);
+    overlay.style.display = "none";
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    selectedBox.style.display = "none";
+    selectedLabel.style.display = "none";
+  }
+
+  // 添加事件监听
+  enableHighlight();
+  window.addEventListener("message", handleParentMessage);
+
+  // 暴露全局函数供外部调用
+  window.__iframeHighlightControl = {
+    enable: enableHighlight,
+    disable: disableHighlight,
+    fullyDisable: fullyDisableHighlight,
+    isEnabled: function isEnabled() {
+      return highlightEnabled;
+    },
+    getSelectedElement: function getSelectedElement() {
+      return selectedElement;
+    },
+    updateSelected: updateSelectedHighlight,
+    // 通过消息发送开关控制
+    sendToggleMessage: function sendToggleMessage(enabled) {
+      window.parent.postMessage({
+        type: 'iframe-highlight-status',
+        enabled: enabled || highlightEnabled,
+        source: 'iframe-highlight-injector'
+      }, '*');
+    }
+  };
+
+  // 通知父窗口脚本已加载
+  try {
+    window.parent.postMessage({
+      type: "iframe-highlight-ready",
+      data: {
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        timestamp: Date.now()
+      },
+      source: "iframe-highlight-injector"
+    }, "*");
+  } catch (error) {
+    console.warn("无法发送就绪消息到父窗口:", error);
+  }
+
+  // 清理函数
+  window.__iframeHighlightCleanup = function () {
+    fullyDisableHighlight();
+    window.removeEventListener("message", handleParentMessage);
+    if (overlay.parentElement) {
+      overlay.parentElement.removeChild(overlay);
+    }
+    delete window.__iframeHighlightInitialized;
+    delete window.__iframeHighlightCleanup;
+  };
+})();
+
+</script>
+
+<script>
+/**
+ * Iframe 元素高亮注入脚本
+ * 需要在目标网站中引入此脚本来支持跨域 iframe 高亮功能
+ *
+ * 使用方法：
+ * 1. 将此脚本添加到目标网站的 HTML 中
+ * 2. 或通过浏览器扩展、用户脚本等方式注入
+ */
+
+(function () {
+  "use strict";
+
+  // 检查是否在 iframe 中
+  if (window.self === window.top) {
+    return; // 不在 iframe 中，不执行
+  }
+
+  // 检查是否已经初始化过
+  if (window.__iframeHighlightInitialized) {
+    return;
+  }
+  window.__iframeHighlightInitialized = true;
+  console.log("Iframe 高亮脚本已加载");
+
+  // 创建高亮覆盖层
+  var overlay = document.createElement("div");
+  overlay.id = "iframe-highlight-overlay";
+  overlay.style.cssText = "\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100vw;\n    height: 100vh;\n    pointer-events: none;\n    z-index: 999999;\n    overflow: hidden;\n  ";
+
+  // 创建悬停高亮框（虚线边框）
+  var highlightBox = document.createElement("div");
+  highlightBox.id = "iframe-highlight-box";
+  highlightBox.style.cssText = "\n    position: absolute;\n    border: 2px dashed #007AFF;\n    background: rgba(0, 122, 255, 0.08);\n    pointer-events: none;\n    display: none;\n    transition: all 0.1s ease;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8);\n    border-radius: 2px;\n  ";
+
+  // 创建选中节点的常驻高亮框（实线边框）
+  var selectedBox = document.createElement("div");
+  selectedBox.id = "iframe-selected-box";
+  selectedBox.style.cssText = "\n    position: absolute;\n    border: 2px solid #007AFF;\n    pointer-events: none;\n    display: none;\n    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 8px rgba(255, 107, 53, 0.4);\n    border-radius: 2px;\n    z-index: 1000000;\n  ";
+
+  // 创建悬停标签显示
+  var tagLabel = document.createElement("div");
+  tagLabel.id = "iframe-tag-label";
+  tagLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 2px 6px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 2px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000001;\n    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);\n    font-weight: 500;\n  ";
+
+  // 创建选中节点标签
+  var selectedLabel = document.createElement("div");
+  selectedLabel.id = "iframe-selected-label";
+  selectedLabel.style.cssText = "\n    position: absolute;\n    background: #007AFF;\n    color: white;\n    padding: 3px 8px;\n    font-size: 11px;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n    border-radius: 3px;\n    pointer-events: none;\n    display: none;\n    white-space: nowrap;\n    z-index: 1000002;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);\n    font-weight: 600;\n  ";
+  overlay.appendChild(highlightBox);
+  overlay.appendChild(selectedBox);
+  overlay.appendChild(tagLabel);
+  overlay.appendChild(selectedLabel);
+  document.body.appendChild(overlay);
+
+  // 存储当前选中的元素
+  var selectedElement = null;
+  var highlightEnabled = false;
+
+  // 更新选中元素的高亮显示
+  function updateSelectedHighlight(element) {
+    console.log("updateSelectedHighlight called with:", element);
+    if (!element) {
+      selectedBox.style.display = "none";
+      selectedLabel.style.display = "none";
+      selectedElement = null;
+      console.log("Cleared selected highlight");
+      return;
+    }
+    selectedElement = element;
+    var rect = element.getBoundingClientRect();
+    console.log("Selected element rect:", rect);
+
+    // 更新选中高亮框位置
+    selectedBox.style.display = "block";
+    selectedBox.style.left = "".concat(rect.left - 2, "px");
+    selectedBox.style.top = "".concat(rect.top - 2, "px");
+    selectedBox.style.width = "".concat(rect.width + 4, "px");
+    selectedBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新选中标签位置和内容
+    selectedLabel.style.display = "block";
+    selectedLabel.textContent = "\u2713 <".concat(element.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 28;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 5) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    var labelWidth = selectedLabel.offsetWidth || 100; // 预估宽度
+    if (labelLeft + labelWidth > window.innerWidth - 10) {
+      labelLeft = window.innerWidth - labelWidth - 10;
+    }
+    selectedLabel.style.left = "".concat(Math.max(5, labelLeft), "px");
+    selectedLabel.style.top = "".concat(labelTop, "px");
+    console.log("Selected highlight positioned at:", {
+      left: selectedBox.style.left,
+      top: selectedBox.style.top,
+      width: selectedBox.style.width,
+      height: selectedBox.style.height
+    });
+  }
+  function getElementSelector(element) {
+    if (!(element instanceof Element)) throw new Error('Argument must be a DOM element');
+    var segments = [];
+    var current = element;
+    while (current !== document.documentElement) {
+      var selector = '';
+      // 优先检查唯一ID
+      if (current.id && document.querySelectorAll("#".concat(current.id)).length === 1) {
+        segments.unshift("#".concat(current.id));
+        break; // ID唯一，无需继续向上
+      }
+
+      // 生成类名选择器（取第一个有效类名）
+      var classes = Array.from(current.classList).filter(function (c) {
+        return !c.startsWith('js-');
+      });
+      var className = classes.length > 0 ? ".".concat(classes[0]) : '';
+
+      // 生成位置索引（nth-child）
+      var tag = current.tagName.toLowerCase();
+      if (!className) {
+        var siblings = Array.from(current.parentNode.children);
+        var index = siblings.findIndex(function (el) {
+          return el === current;
+        }) + 1;
+        selector = "".concat(tag, ":nth-child(").concat(index, ")");
+      } else {
+        selector = className;
+      }
+      segments.unshift(selector);
+      current = current.parentElement;
+    }
+
+    // 处理根元素
+    if (current === document.documentElement) {
+      segments.unshift('html');
+    }
+    return segments.join(' > ');
+  }
+
+  // 获取元素文本内容
+  function getElementText(element) {
+    var _element$textContent;
+    if (element.tagName === "INPUT") {
+      return element.value || element.placeholder || "";
+    }
+    if (element.tagName === "TEXTAREA") {
+      return element.value || element.placeholder || "";
+    }
+    var text = ((_element$textContent = element.textContent) === null || _element$textContent === void 0 ? void 0 : _element$textContent.trim()) || "";
+    return text.length > 50 ? text.substring(0, 50) + "..." : text;
+  }
+
+  // 获取元素属性信息
+  function getElementAttributes(element) {
+    var attrs = {};
+    for (var i = 0; i < element.attributes.length; i++) {
+      var attr = element.attributes[i];
+      attrs[attr.name] = attr.value;
+    }
+    return attrs;
+  }
+
+  // 鼠标悬停事件处理
+  function handleMouseOver(e) {
+    if (!highlightEnabled) return;
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免高亮 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 如果是已选中的元素，不显示悬停高亮
+    if (target === selectedElement) {
+      highlightBox.style.display = "none";
+      tagLabel.style.display = "none";
+      return;
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+
+    // 更新悬停高亮框位置
+    highlightBox.style.display = "block";
+    highlightBox.style.left = "".concat(rect.left - 2, "px");
+    highlightBox.style.top = "".concat(rect.top - 2, "px");
+    highlightBox.style.width = "".concat(rect.width + 4, "px");
+    highlightBox.style.height = "".concat(rect.height + 4, "px");
+
+    // 更新标签位置和内容
+    tagLabel.style.display = "block";
+    tagLabel.textContent = "<".concat(target.tagName.toLowerCase(), ">");
+
+    // 计算标签位置，确保不超出视窗
+    var labelTop = rect.top - 22;
+    var labelLeft = rect.left;
+
+    // 如果标签会超出顶部，显示在元素下方
+    if (labelTop < 0) {
+      labelTop = rect.bottom + 5;
+    }
+
+    // 如果标签会超出右侧，向左调整
+    if (labelLeft + tagLabel.offsetWidth > window.innerWidth) {
+      labelLeft = window.innerWidth - tagLabel.offsetWidth - 5;
+    }
+    tagLabel.style.left = "".concat(Math.max(0, labelLeft), "px");
+    tagLabel.style.top = "".concat(labelTop, "px");
+
+    // 发送消息到父窗口
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 鼠标离开事件处理
+  function handleMouseOut(e) {
+    if (!highlightEnabled) return;
+    var relatedTarget = e.relatedTarget;
+
+    // 如果鼠标移动到高亮相关元素上，不隐藏高亮
+    if (relatedTarget && (relatedTarget === highlightBox || relatedTarget === tagLabel || relatedTarget === overlay || relatedTarget === selectedBox || relatedTarget === selectedLabel)) {
+      return;
+    }
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-hover",
+        data: null,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 点击事件处理
+  function handleClick(e) {
+    var target = e.target;
+    if (!target || target === overlay || target === highlightBox || target === tagLabel || target === selectedBox || target === selectedLabel) {
+      return;
+    }
+
+    // 避免处理 html 和 body 元素
+    if (target === document.documentElement || target === document.body) {
+      return;
+    }
+
+    // 检查是否是交互元素，这些元素需要保留默认行为
+    var isInteractiveElement = ['input', 'textarea', 'select', 'button', 'a'].includes(target.tagName.toLowerCase());
+
+    // 如果高亮功能启用，对于非交互元素阻止默认行为和事件传播
+    if (highlightEnabled) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    var rect = target.getBoundingClientRect();
+    var selector = getElementSelector(target);
+    var text = getElementText(target);
+    var attributes = getElementAttributes(target);
+    console.log("Element clicked:", {
+      tagName: target.tagName,
+      selector: selector,
+      rect: rect
+    });
+
+    // 立即更新选中高亮
+    updateSelectedHighlight(target);
+
+    // 隐藏悬停高亮，因为现在是选中状态
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    var elementInfo = {
+      tagName: target.tagName.toLowerCase(),
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        x: rect.x,
+        y: rect.y
+      },
+      selector: selector,
+      text: text,
+      attributes: attributes,
+      url: window.location.href,
+      path: window.location.pathname,
+      timestamp: Date.now()
+    };
+    try {
+      window.parent.postMessage({
+        type: "iframe-element-click",
+        data: elementInfo,
+        source: "iframe-highlight-injector"
+      }, "*");
+    } catch (error) {
+      console.warn("无法发送消息到父窗口:", error);
+    }
+  }
+
+  // 监听来自父窗口的消息
+  function handleParentMessage(event) {
+    console.log("Received message from parent:", event.data);
+    if (event.data.type === "iframe-highlight-toggle") {
+      var enabled = event.data.enabled;
+      console.log("Highlight toggle:", enabled);
+      if (enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "enable-iframe-highlight") {
+      console.log("Enable iframe highlight");
+      enableHighlight();
+    } else if (event.data.type === "disable-iframe-highlight") {
+      console.log("Disable iframe highlight");
+      disableHighlight();
+    } else if (event.data.type === "toggle-iframe-highlight") {
+      var _enabled = event.data.enabled !== undefined ? event.data.enabled : !highlightEnabled;
+      console.log("Toggle iframe highlight to:", _enabled);
+      if (_enabled) {
+        enableHighlight();
+      } else {
+        disableHighlight();
+      }
+    } else if (event.data.type === "update-selected-element") {
+      var selector = event.data.selector;
+      console.log("Update selected element with selector:", selector);
+      if (selector) {
+        try {
+          var element = document.querySelector(selector);
+          console.log("Found element by selector:", element);
+          updateSelectedHighlight(element);
+        } catch (error) {
+          console.warn("Failed to select element:", error);
+          updateSelectedHighlight(null);
+        }
+      } else {
+        updateSelectedHighlight(null);
+      }
+    } else if (event.data.type === "clear-selected-element") {
+      console.log("Clear selected element");
+      updateSelectedHighlight(null);
+    }
+  }
+
+  // 启用高亮功能
+  function enableHighlight() {
+    console.log("Enabling highlight");
+    document.addEventListener("mouseover", handleMouseOver, true);
+    document.addEventListener("mouseout", handleMouseOut, true);
+    document.addEventListener("click", handleClick, true);
+    highlightEnabled = true;
+    overlay.style.display = "block";
+  }
+
+  // 禁用高亮功能
+  function disableHighlight() {
+    console.log("Disabling highlight");
+    highlightEnabled = false;
+    // 保持事件监听器，但通过 highlightEnabled 变量控制行为
+    // 这样可以保留选中状态的显示
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    // 不隐藏 selectedBox 和 selectedLabel，保留选中状态
+  }
+
+  // 完全禁用高亮功能（移除所有监听器）
+  function fullyDisableHighlight() {
+    console.log("Fully disabling highlight");
+    highlightEnabled = false;
+    document.removeEventListener("mouseover", handleMouseOver, true);
+    document.removeEventListener("mouseout", handleMouseOut, true);
+    document.removeEventListener("click", handleClick, true);
+    overlay.style.display = "none";
+    highlightBox.style.display = "none";
+    tagLabel.style.display = "none";
+    selectedBox.style.display = "none";
+    selectedLabel.style.display = "none";
+  }
+
+  // 添加事件监听
+  enableHighlight();
+  window.addEventListener("message", handleParentMessage);
+
+  // 暴露全局函数供外部调用
+  window.__iframeHighlightControl = {
+    enable: enableHighlight,
+    disable: disableHighlight,
+    fullyDisable: fullyDisableHighlight,
+    isEnabled: function isEnabled() {
+      return highlightEnabled;
+    },
+    getSelectedElement: function getSelectedElement() {
+      return selectedElement;
+    },
+    updateSelected: updateSelectedHighlight,
+    // 通过消息发送开关控制
+    sendToggleMessage: function sendToggleMessage(enabled) {
+      window.parent.postMessage({
+        type: 'iframe-highlight-status',
+        enabled: enabled || highlightEnabled,
+        source: 'iframe-highlight-injector'
+      }, '*');
+    }
+  };
+
+  // 通知父窗口脚本已加载
+  try {
+    window.parent.postMessage({
+      type: "iframe-highlight-ready",
+      data: {
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        timestamp: Date.now()
+      },
+      source: "iframe-highlight-injector"
+    }, "*");
+  } catch (error) {
+    console.warn("无法发送就绪消息到父窗口:", error);
+  }
+
+  // 清理函数
+  window.__iframeHighlightCleanup = function () {
+    fullyDisableHighlight();
+    window.removeEventListener("message", handleParentMessage);
+    if (overlay.parentElement) {
+      overlay.parentElement.removeChild(overlay);
+    }
+    delete window.__iframeHighlightInitialized;
+    delete window.__iframeHighlightCleanup;
+  };
+})();
+
+</script>
+</body>
+</html>
