@@ -6,11 +6,23 @@
 - 后端：FastAPI + Pydantic v2 + httpx，支持 JSON / SQLite / PostgreSQL 多种持久化
 - LLM：任意 **OpenAI 兼容** `/chat/completions` 服务，自带解析容错与标签归一化
 
-## 截图
+---
 
-| 仪表盘 | 对话分析 | 标签分类体系管理 |
-| --- | --- | --- |
-| ![仪表盘](./image1.png) | ![对话分析](./image2.png) | ![标签分类体系](./image3.png) |
+## 效果截图
+
+### 仪表盘
+
+![仪表盘](./image1.png)
+
+### 对话分析
+
+![对话分析](./image2.png)
+
+### 标签分类体系管理
+
+![标签分类体系](./image3.png)
+
+---
 
 ## 目录结构
 
