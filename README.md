@@ -151,12 +151,6 @@ A: 首次访问会回退到 [schemas_tag.py](./hospital-profile-backend/app/sche
 **Q: 标签提取不准确**
 A: 后端提示词在 `hospital-profile-backend/app/llm.py`，已做 JSON 鲁棒解析、分类归一化、置信度裁剪；可在仪表盘 → 标签分类管理里把候选标签收窄，引导 LLM 输出更准的 `tagName`。
 
-## 安全提醒
-
-- 仓库已确认 **未提交任何真实 LLM API Key / Token**（`.env`、`data/` 已在 `.gitignore` 中）。
-- `.env` 切勿提交；本地调试时填入的 Key 仅保存在你自己的 `.env` 中。
-- 截图（`image1.png / image2.png / image3.png`）已放在仓库根目录，可直接被 README 引用。
-
 ## License
 
 MIT
